@@ -20,6 +20,10 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen> {
+  final List<String> _customTruths = [];
+  final List<String> _customDares = [];
+  final TextEditingController _customController = TextEditingController();
+  String _customType = 'Truth';
   String _currentPlayer = '';
   String _displayText = 'Spin to see who is next!';
   bool _isSpinning = false;
@@ -65,97 +69,226 @@ class _GameScreenState extends State<GameScreen> {
   void _getQuestion(String type) {
     if (_currentPlayer.isEmpty || _isSpinning) return;
     final random = Random();
-    final questions =
-        gameData[widget.gameMode]?[type]?[widget.mood] ??
-        ['No questions found for this category.'];
+    List<String> questions = List.from(
+      gameData[widget.gameMode]?[type]?[widget.mood] ?? [],
+    );
+    if (type == 'Truth') {
+      questions.addAll(_customTruths);
+    } else {
+      questions.addAll(_customDares);
+    }
+    if (questions.isEmpty)
+      questions = ['No questions found for this category.'];
     final index = random.nextInt(questions.length);
     setState(() {
       _displayText = questions[index];
     });
   }
 
-  List<String> _getMoodsFor(String type) {
-    return gameData[widget.gameMode]?[type]?.keys.toList() ?? [];
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.gameMode), centerTitle: true),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              // Player display and spin button
-              Column(
-                children: [
-                  Text(
-                    _isSpinning ? 'Spinning...' : 'Current Player:',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w300,
+      appBar: AppBar(
+        title: Text(widget.gameMode),
+        centerTitle: true,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        elevation: 6,
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF7B1FA2), Color(0xFFF8F6FF)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                // Player display and spin button
+                Card(
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(18.0),
+                    child: Column(
+                      children: [
+                        Text(
+                          _isSpinning ? 'Spinning...' : 'Current Player:',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w300,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        CircleAvatar(
+                          radius: 32,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.secondary,
+                          child: Text(
+                            _currentPlayer.isNotEmpty
+                                ? _currentPlayer[0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                              fontSize: 32,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          _currentPlayer,
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          onPressed: _startSpin,
+                          icon: const Icon(Icons.casino),
+                          label: const Text('SPIN'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(40),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    _currentPlayer,
-                    style: const TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _startSpin,
-                    child: const Text('SPIN'),
-                  ),
-                ],
-              ),
-
-              // Main text display
-              Container(
-                width: double.infinity,
-                height: 200,
-                padding: const EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Theme.of(context).primaryColor,
-                    width: 2,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Center(
-                  child: Text(
-                    _displayText,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 22),
+
+                // Main text display
+                Card(
+                  elevation: 6,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Container(
+                    width: double.infinity,
+                    height: 180,
+                    padding: const EdgeInsets.all(16.0),
+                    child: Center(
+                      child: Text(
+                        _displayText,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 22),
+                      ),
+                    ),
                   ),
                 ),
-              ),
 
-              // Truth & Dare buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton(
-                    onPressed: () => _getQuestion('Truth'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
+                // Truth & Dare buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () => _getQuestion('Truth'),
+                      icon: const Icon(Icons.question_answer),
+                      label: const Text('Truth'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(40),
+                        ),
+                      ),
                     ),
-                    child: const Text('Truth'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => _getQuestion('Dare'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
+                    ElevatedButton.icon(
+                      onPressed: () => _getQuestion('Dare'),
+                      icon: const Icon(Icons.flash_on),
+                      label: const Text('Dare'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(40),
+                        ),
+                      ),
                     ),
-                    child: const Text('Dare'),
+                  ],
+                ),
+
+                // Add custom question section
+                Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                ],
-              ),
-            ],
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Add Custom Question',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _customController,
+                                decoration: const InputDecoration(
+                                  hintText: 'Enter your custom question',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            DropdownButton<String>(
+                              value: _customType,
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'Truth',
+                                  child: Text('Truth'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Dare',
+                                  child: Text('Dare'),
+                                ),
+                              ],
+                              onChanged: (val) {
+                                setState(() {
+                                  _customType = val ?? 'Truth';
+                                });
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: () {
+                                if (_customController.text.trim().isNotEmpty) {
+                                  setState(() {
+                                    if (_customType == 'Truth') {
+                                      _customTruths.add(
+                                        _customController.text.trim(),
+                                      );
+                                    } else {
+                                      _customDares.add(
+                                        _customController.text.trim(),
+                                      );
+                                    }
+                                    _customController.clear();
+                                  });
+                                }
+                              },
+                              child: const Text('+ Add'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
